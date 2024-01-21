@@ -1,0 +1,42 @@
+===============================
+tdr-convert: tdr file converter
+===============================
+
+Introduction
+------------
+
+This utility provides TDR file format conversion to devsim, Gmsh, or Tecplot file format
+
+::
+
+    pip install tdr-convert
+    tdr_convert --tdr file.tdr --devsim file.msh --drop_interfaces_at_contact --scale 1e-4
+
+    tdr_convert --help
+
+    usage: tdr_convert [-h] --tdr TDR [--load_datasets] [--tecplot TECPLOT] [--devsim DEVSIM] [--gmsh GMSH]
+                       [--gmsh_import GMSH_IMPORT] [--device_name DEVICE_NAME] [--scale SCALE]
+                       [--drop_interfaces_at_contact]
+
+    Create mesh from tdr file
+
+    options:
+      -h, --help            show this help message and exit
+      --tdr TDR             the tdr file to input
+      --load_datasets       write data sets
+      --tecplot TECPLOT     the tecplot file to output
+      --devsim DEVSIM       the devsim file to output
+      --gmsh GMSH           the gmsh file to output
+      --gmsh_import GMSH_IMPORT
+                            the file to write the devsim commands to recreate a new gmsh device
+      --device_name DEVICE_NAME
+                            the device name
+      --scale SCALE         coordinate scaling factor
+      --drop_interfaces_at_contact
+                            drop interfaces from nodes at contact
+
+
+Mesh requirements
+-----------------
+
+Requires triangular device simulation mesh in 2D.  A tetrahedral mesh is required in 3D.  Mixed elements are not supported.
