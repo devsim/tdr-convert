@@ -1,3 +1,6 @@
+0.0.7
+Write tetgen
+
 0.0.6
 Support vector components
 
