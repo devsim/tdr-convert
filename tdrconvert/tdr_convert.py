@@ -1,5 +1,5 @@
-from . import read_tdr
-from . import write_gmsh
+import tdrconvert.read_tdr as read_tdr
+import tdrconvert.write_gmsh as write_gmsh
 import devsim as ds
 import argparse
 

@@ -433,6 +433,15 @@ def create_mesh(mesh, data):
             raise RuntimeError("UNEXPECTED TYPENAME")
     ds.finalize_mesh(mesh=mesh)
 
+def create_node_solution(device, region, name, values):
+    ds.node_solution(device=device, region=region, name=name)
+    if numpy.unique(values).shape[0] == 1:
+        v=values[0]
+        ds.set_node_value(device=device, region=region, name=name, value=v)
+    else:
+        #v=[float(x) for x in values]
+        ds.set_node_values(device=device, region=region, name=name, values=values)
+
 def load_datasets(device_name, data):
     datasets = []
     state = data['geometry']['state_0']
@@ -444,32 +453,56 @@ def load_datasets(device_name, data):
         region = d.attrs['region']
         # skip non regions (interfaces, contacts)
         if data['regions'][region]['type'] != 0:
+            rname=data['regions'][region]['name']
+            print(f'Skip loading data for {name} {rname}')
             continue
         values = d['values'][()]
         structure_type = d.attrs['structure type']
         location_type = d.attrs['location type']
+        number_of_values = d.attrs['number of values']
+        number_of_rows = d.attrs.get('number of rows', 1)
         # skip non scalar fields for now
-        if structure_type != 0 or location_type != 0:
-            continue
-        datasets.append(
-            {
-                'name' : name,
-                'region' : region,
-                'values' : values,
-                'dataset' : n,
-            }
-        )
+        if structure_type == 0 and location_type == 0:
+            if number_of_rows != 1:
+                raise RuntimeError(number_of_rows)
+        elif structure_type == 1 and location_type == 0:
+            edict = data['regions'][region]['elements']
+            nnode = len(edict['coordinates'])
+            if number_of_rows == 1:
+                raise RuntimeError(number_of_rows)
+            elif nnode != (len(values) // number_of_rows):
+                raise RuntimeError(number_of_rows)
+            datasets.append(
+                {
+                    'name' : name,
+                    'region' : region,
+                    'values' : values,
+                    'dataset' : n,
+                    'nrows' : number_of_rows,
+                }
+            )
+        else:
+            rname=data['regions'][region]['name']
+            edict = data['regions'][region]['elements']
+            nnode = len(edict['coordinates'])
+            sname = get_shape_name(edict['dim'])
+            nele = len(edict[sname])
+            print(f'''Skipping data for {name} {rname} {n}
+    region {rname} has {nnode} nodes and {nele} {sname}
+    {n} has {len(values)} values
+    structure {structure_type} location {location_type}''')
 
     for d in datasets:
         r=data['regions'][d['region']]['name']
         n=d['name']
-        ds.node_solution(device=device_name, region=r, name=n)
-        if numpy.unique(d['values']).shape[0] == 1:
-            v=float(d['values'][0])
-            ds.set_node_value(device=device_name, region=r, name=n, value=v)
+        v=d['values']
+        nrows = d['nrows']
+
+        if nrows == 1:
+            create_node_solution(device=device_name, region=r, name=n, values=v)
         else:
-            v=[float(x) for x in d['values']]
-            ds.set_node_values(device=device_name, region=r, name=n, values=v)
+            for i in range(nrows):
+                create_node_solution(device=device_name, region=r, name=f'{n}_{i}', values=v[i::nrows])
 
     return datasets
 

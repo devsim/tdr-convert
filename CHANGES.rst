@@ -1,3 +1,6 @@
+0.0.6
+Support vector components
+
 0.0.4
 change repo location
 
