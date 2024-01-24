@@ -1,7 +1,7 @@
 import h5py
 import numpy
 import sys
-import devsim as ds
+from . import load_devsim as ds
 
 compress_opts = {
     "compression" : "gzip",
@@ -9,10 +9,13 @@ compress_opts = {
 
 
 def process_elements(data, Type):
+    # a line
     if (data[0] == 1) and (numpy.unique(data[0::3]).shape[0] == 1):
         dimension = 1
+    # a triangle
     elif (data[0] == 2) and (numpy.unique(data[0::4]).shape[0] == 1):
         dimension = 2
+    # a tetrahedron 5
     elif (data[0] == 5) and (numpy.unique(data[0::5]).shape[0] == 1):
         dimension = 3
     else:
@@ -20,8 +23,13 @@ def process_elements(data, Type):
 
     ename = get_shape_name(dimension)
 
+    # the first and every dimension + 2 element after that is the element type
     new_array = numpy.delete(data, numpy.s_[0::dimension+2])
+    # sort unique to get the coordinates indexes for region
+    # this is a direct mapping for datasets later
     coordinates = numpy.unique(new_array)
+    # reshape as table of coordinates indexes for a triangle or tetrahedron
+    # -1 is the unknown
     new_array = numpy.reshape(new_array, (-1, dimension+1))
 
     ret = {
@@ -323,6 +331,7 @@ def write_interface(interface):
 
 def get_coordinates(vertex,scale):
     coordinates = []
+    # TODO: optimize
     if len(vertex.dtype) == 2:
         for i in vertex:
             coordinates.extend((float(i[0])*scale, float(i[1])*scale, 0.0))
@@ -331,6 +340,7 @@ def get_coordinates(vertex,scale):
             coordinates.extend((float(i[0])*scale, float(i[1])*scale, float(i[2])*scale))
     else:
         raise RuntimeError("Unexpected Dimension")
+    coordinates = numpy.array(coordinates)
     return coordinates
 
 def write_devsim(regions):
@@ -349,11 +359,11 @@ def write_devsim(regions):
 
 def read_tdr(filename, scale, drop_interfaces_at_contact):
     f = h5py.File(filename)
-    print(list(f.keys()))
+    #print(list(f.keys()))
     collection=f['collection']
-    print(list(collection.attrs.keys()))
+    #print(list(collection.attrs.keys()))
     geometry=collection['geometry_0']
-
+    dimension = geometry.attrs['dimension']
 
     # this is the coordinate data
     vertex = geometry['vertex']
@@ -403,10 +413,11 @@ def read_tdr(filename, scale, drop_interfaces_at_contact):
         'physical_names' : physical_names,
         'elements' : elements,
         'regions' : regions,
-        'geometry' : geometry
+        'geometry' : geometry,
+        'dimension' : dimension,
     }
 
-def create_mesh(mesh, data):
+def create_devsim_mesh(mesh, data):
     coordinates=data['coordinates']
     regions=data['regions']
     elements=data['elements']
@@ -442,7 +453,7 @@ def create_node_solution(device, region, name, values):
         #v=[float(x) for x in values]
         ds.set_node_values(device=device, region=region, name=name, values=values)
 
-def load_datasets(device_name, data):
+def load_datasets(data):
     datasets = []
     state = data['geometry']['state_0']
     for n, d in list(state.items()):
@@ -452,9 +463,10 @@ def load_datasets(device_name, data):
         name   = d.attrs['name'].decode('ascii')
         region = d.attrs['region']
         # skip non regions (interfaces, contacts)
-        if data['regions'][region]['type'] != 0:
+        region_type = data['regions'][region]['type']
+        if region_type != 0:
             rname=data['regions'][region]['name']
-            print(f'Skip loading data for {name} {rname}')
+            print(f'Skip loading data for {name} {rname} of type {region_type}')
             continue
         values = d['values'][()]
         structure_type = d.attrs['structure type']
@@ -472,6 +484,7 @@ def load_datasets(device_name, data):
                 raise RuntimeError(number_of_rows)
             elif nnode != (len(values) // number_of_rows):
                 raise RuntimeError(number_of_rows)
+            values = numpy.transpose(values.reshape(-1, number_of_rows))
             datasets.append(
                 {
                     'name' : name,
@@ -481,6 +494,15 @@ def load_datasets(device_name, data):
                     'nrows' : number_of_rows,
                 }
             )
+            rname=data['regions'][region]['name']
+            edict = data['regions'][region]['elements']
+            nnode = len(edict['coordinates'])
+            sname = get_shape_name(edict['dim'])
+            nele = len(edict[sname])
+            print(f'''Loading data for {name} {rname} {n}
+    region {rname} has {nnode} nodes and {nele} {sname}
+    {n} has {len(values)} values with {number_of_rows} rows
+    structure {structure_type} location {location_type} type {region_type}''')
         else:
             rname=data['regions'][region]['name']
             edict = data['regions'][region]['elements']
@@ -490,8 +512,11 @@ def load_datasets(device_name, data):
             print(f'''Skipping data for {name} {rname} {n}
     region {rname} has {nnode} nodes and {nele} {sname}
     {n} has {len(values)} values
-    structure {structure_type} location {location_type}''')
+    structure {structure_type} location {location_type} type {region_type}''')
+    return datasets
 
+
+def create_devsim_data(device_name, data, datasets):
     for d in datasets:
         r=data['regions'][d['region']]['name']
         n=d['name']
@@ -502,7 +527,5 @@ def load_datasets(device_name, data):
             create_node_solution(device=device_name, region=r, name=n, values=v)
         else:
             for i in range(nrows):
-                create_node_solution(device=device_name, region=r, name=f'{n}_{i}', values=v[i::nrows])
-
-    return datasets
+                create_node_solution(device=device_name, region=r, name=f'{n}_{i}', values=v[i,:])
 

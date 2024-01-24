@@ -1,3 +1,6 @@
+1.0.0
+write exodus with ``--exodus``.  do direct conversion from tdr to gmsh, tetgen, exodus.  the ``--old`` option is added to force using ``devsim`` instead of direct tdr conversion.  add ``--vtk`` option.
+
 0.0.7
 Write tetgen
 

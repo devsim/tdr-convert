@@ -12,6 +12,7 @@ setup(
         install_requires = [
             'numpy',
             'h5py',
+            'netCDF4',
             'devsim',
         ],
     )
