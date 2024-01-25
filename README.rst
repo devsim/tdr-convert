@@ -14,11 +14,9 @@ This utility provides TDR file format conversion to devsim, Gmsh, or Tecplot fil
 
     tdr_convert --help
 
-    usage: tdr_convert [-h] --tdr TDR [--load_datasets] [--tecplot TECPLOT]
-                       [--devsim DEVSIM] [--gmsh GMSH] [--gmsh_import GMSH_IMPORT]
-                       [--device_name DEVICE_NAME] [--scale SCALE]
-                       [--drop_interfaces_at_contact] [--tetgen TETGEN]
-                       [--exodus EXODUS] [--old]
+    usage: tdr_convert [-h] --tdr TDR [--load_datasets] [--tecplot TECPLOT] [--devsim DEVSIM] [--gmsh GMSH] [--gmsh_import GMSH_IMPORT]
+                       [--device_name DEVICE_NAME] [--scale SCALE] [--drop_interfaces_at_contact] [--tetgen TETGEN] [--exodus EXODUS]
+                       [--vtk VTK] [--old]
 
     Create mesh from tdr file
 
@@ -30,8 +28,7 @@ This utility provides TDR file format conversion to devsim, Gmsh, or Tecplot fil
       --devsim DEVSIM       the devsim file to output
       --gmsh GMSH           the gmsh file to output
       --gmsh_import GMSH_IMPORT
-                            the file to write the devsim commands to recreate a
-                            new gmsh device
+                            the file to write the devsim commands to recreate a new gmsh device
       --device_name DEVICE_NAME
                             the device name
       --scale SCALE         coordinate scaling factor
@@ -39,7 +36,8 @@ This utility provides TDR file format conversion to devsim, Gmsh, or Tecplot fil
                             drop interfaces from nodes at contact
       --tetgen TETGEN       the base name for tetgen files to output
       --exodus EXODUS       name of the exodus output file
-      --old                 use old method for getting data
+      --vtk VTK             basename for vtk output file
+      --old                 use old method for getting data using devsim
 
 
 Mesh Requirements

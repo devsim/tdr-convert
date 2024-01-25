@@ -454,6 +454,7 @@ def create_node_solution(device, region, name, values):
         ds.set_node_values(device=device, region=region, name=name, values=values)
 
 def load_datasets(data):
+    print("Loading data")
     datasets = []
     state = data['geometry']['state_0']
     for n, d in list(state.items()):
@@ -466,7 +467,7 @@ def load_datasets(data):
         region_type = data['regions'][region]['type']
         if region_type != 0:
             rname=data['regions'][region]['name']
-            print(f'Skip loading data for {name} {rname} of type {region_type}')
+            #print(f'Skip loading data for {name} {rname} of type {region_type}')
             continue
         values = d['values'][()]
         structure_type = d.attrs['structure type']
@@ -499,10 +500,11 @@ def load_datasets(data):
             nnode = len(edict['coordinates'])
             sname = get_shape_name(edict['dim'])
             nele = len(edict[sname])
-            print(f'''Loading data for {name} {rname} {n}
-    region {rname} has {nnode} nodes and {nele} {sname}
-    {n} has {len(values)} values with {number_of_rows} rows
-    structure {structure_type} location {location_type} type {region_type}''')
+#            print(f'''Loading data for {name} {rname} {n}''')
+#            print(f'''Loading data for {name} {rname} {n}
+#    region {rname} has {nnode} nodes and {nele} {sname}
+#    {n} has {len(values)} values with {number_of_rows} rows
+#    structure {structure_type} location {location_type} type {region_type}''')
         else:
             rname=data['regions'][region]['name']
             edict = data['regions'][region]['elements']

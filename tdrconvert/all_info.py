@@ -207,6 +207,7 @@ def get_tdr_device_info(device, data):
 
 
 def get_info_from_tdr_data(device, data):
+    print("Collecting TDR data")
     #
     # groups
     #

@@ -95,33 +95,29 @@ def write(rootgrp, all_info):
 #
 def write_datasets_from_tdr(rootgrp, data):
     #print(data['datasets'])
+    print("Merging TDR datasets")
     datasets = data['datasets']
-
-    def create_name(cdict, n, oindex, dindex, cindex):
-        if n not in cdict:
-            cdict[n] = {
-                    # the output variable index
-                    'oindex' : oindex,
-                    # the datasets index
-                    'dindex' : [dindex],
-                    'cindex' : [cindex],
-                }
-        else:
-            cdict[n]['dindex'].append(dindex)
-            cdict[n]['cindex'].append(cindex)
 
     to_create = {}
     oindex = 0
     for i, d in enumerate(datasets):
         name = d['name']
         nrows = d['nrows']
-        if nrows == 1:
-            create_name(to_create, name, oindex=oindex, dindex=i, cindex=0)
-            oindex += 1
-        else:
-            for j in range(nrows):
-                create_name(to_create, f'{name}_{j}', oindex=oindex, dindex=i, cindex=0)
+
+        for j in range(nrows):
+            if nrows == 1:
+                oname = name
+            else:
+                oname = f'{name}_{j}'
+            if oname not in to_create:
+                to_create[oname] = {
+                    'oindex' : oindex,
+                    'dindex' : [],
+                    'cindex' : j,
+                }
+                print(f'{oname} {oindex} {i} {j}')
                 oindex += 1
+            to_create[oname]['dindex'].append(i)
 
     num_nod_var = len(to_create)
     if num_nod_var == 0:
@@ -132,9 +128,14 @@ def write_datasets_from_tdr(rootgrp, data):
     nv = rootgrp.createVariable('name_nod_var', 'S1', ('num_nod_var', 'len_name'))
     for k, v in to_create.items():
         #print(v)
+        print(f'{v["oindex"]} {k} {len(k)} {num_nod_var} {len(to_create)}')
         nv[v['oindex']] = stringtoarr(k, rootgrp.dimensions['len_name'].size)
 
+    num_nodes = rootgrp.dimensions['num_nodes'].size
+    # Writing records
+    temp_array = np.empty(num_nodes)
     for k, v in to_create.items():
+        temp_array[:] = 0.0
         oi = v['oindex'] + 1
         #print(oi)
         vv = rootgrp.createVariable(f'vals_nod_var{oi}', 'f8', ('time_step', 'num_nodes'))
@@ -143,7 +144,12 @@ def write_datasets_from_tdr(rootgrp, data):
         for di in v['dindex']:
             dataset = datasets[di]
             coordinate = data['regions'][dataset['region']]['elements']['coordinates']
-            vv[:] = dataset['values'][ci, coordinate]
+            # does not handle coincident nodes in adjacent blocks
+            #print(temp_array.shape)
+            temp_array[coordinate] = dataset['values'][ci, :]
+            #print(temp_array.shape)
+            #print()
+        vv[0,:] = temp_array
 
 # make sure to handle nodal and element data
 def write_exodus(filename, all_info, data):
