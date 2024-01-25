@@ -2,6 +2,7 @@ from netCDF4 import Dataset,stringtoarr
 import numpy as np
 
 def write(rootgrp, all_info):
+    print("writing exodus file")
     coordinates = all_info['coordinates']
     region_info = all_info['region_info']
     boundary_info = all_info['boundary_info']
@@ -98,8 +99,7 @@ def write(rootgrp, all_info):
         s = str(i+1)
         cn=rootgrp.createVariable(f'connect{s}', 'i4', (f'num_el_in_blk{s}', f'num_nod_per_el{s}'))
         cn.elem_type = sname
-        for j, e in enumerate(x.elements):
-            cn[j,:] = e
+        cn[:,:] = x.elements
     #
     # need to handle contacts as side sets
     #

@@ -1,3 +1,6 @@
+0.1.3
+large speedup in connections processing for exodus
+
 0.1.2
 fixed bug in paraview reading exodus file format
 
