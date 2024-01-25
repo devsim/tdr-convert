@@ -1,3 +1,6 @@
+0.1.2
+fixed bug in paraview reading exodus file format
+
 0.1.1
 fixed bug in handling the loading of datasets into exodus file format
 

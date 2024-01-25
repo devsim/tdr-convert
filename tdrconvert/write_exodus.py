@@ -7,6 +7,13 @@ def write(rootgrp, all_info):
     boundary_info = all_info['boundary_info']
 
 
+    rootgrp.setncattr('api_version', np.array(8.03, 'f4'))
+    rootgrp.setncattr('version', np.array(8.03, 'f4'))
+    rootgrp.setncattr('floating_point_word_size', np.array(8, 'i4'))
+    rootgrp.setncattr('file_size', np.array(1, 'i4'))
+    rootgrp.setncattr('maximum_name_length', np.array(32, 'i4'))
+    rootgrp.setncattr('int64_status', np.array(0, 'i4'))
+    rootgrp.setncattr('title', 'tdrconvert')
     #
     # dimensions
     #
@@ -29,11 +36,19 @@ def write(rootgrp, all_info):
        rootgrp.createDimension(f'num_nod_per_el{n+1}', nod_per_el[n])
 #side set stuff, include distribution factors
     rootgrp.createDimension('four', 4)
-    rootgrp.createDimension('len_string', 33)
+    len_string = 33
+    rootgrp.createDimension('len_string', len_string)
+    rootgrp.createDimension('num_qa_rec', 1)
 
     #
     # variables
     #
+    x=rootgrp.createVariable('qa_records', 'S1', ('num_qa_rec', 'four', 'len_string'))
+    x[0][0] = stringtoarr('tdrconvert', len_string)
+    x[0][1] = stringtoarr('2024', len_string)
+    x[0][2] = stringtoarr('01/25/2024', len_string)
+    x[0][3] = stringtoarr('00:00:00', len_string)
+
     x=rootgrp.createVariable('time_whole', 'f8', ('time_step',))
     x[:]=0
 
