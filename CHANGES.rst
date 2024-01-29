@@ -1,3 +1,6 @@
+0.1.4
+fix issue where scalar nodal data was missing
+
 0.1.3
 large speedup in connections processing for exodus
 

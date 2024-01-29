@@ -475,16 +475,16 @@ def load_datasets(data):
         number_of_values = d.attrs['number of values']
         number_of_rows = d.attrs.get('number of rows', 1)
         # skip non scalar fields for now
-        if structure_type == 0 and location_type == 0:
-            if number_of_rows != 1:
-                raise RuntimeError(number_of_rows)
-        elif structure_type == 1 and location_type == 0:
+        if location_type == 0 and structure_type in (0,1,):
+            # structure_type:
+                # 0 if scalar
+                # 1 if vector
             edict = data['regions'][region]['elements']
             nnode = len(edict['coordinates'])
-            if number_of_rows == 1:
+
+            if nnode != (len(values) // number_of_rows):
                 raise RuntimeError(number_of_rows)
-            elif nnode != (len(values) // number_of_rows):
-                raise RuntimeError(number_of_rows)
+
             values = numpy.transpose(values.reshape(-1, number_of_rows))
             datasets.append(
                 {
