@@ -31,17 +31,14 @@ class BoundaryInfo:
     def __init__(self, node_to_coordinates, elements, transform_elements):
         self.node_to_coordinates = node_to_coordinates
         if transform_elements:
-            self.elements = elements
+            self.elements = transform_nodes_to_coordinates(node_to_coordinates, elements)
         else:
             # 1 based indexing for gmsh, tetgen, exodus
             self.elements = elements[:] + 1
 
 def transform_nodes_to_coordinates(node_to_coordinates, elements):
-    out_elements = [None] * len(elements)
-    for i, e in enumerate(elements):
-        # GMSH is a 1 based system
-        # TODO: see if numpy can do this faster
-        out_elements[i] = tuple([node_to_coordinates[j] + 1 for j in e])
+    # GMSH is a 1 based system
+    out_elements = node_to_coordinates[elements] + 1
     return out_elements
 
 def get_physical_groups(device):
@@ -73,8 +70,8 @@ def get_region_info(device):
     regions = ds.get_region_list(device=device)
 
     for region in regions:
-        node_to_coordinates = [int(i) for i in ds.get_node_model_values(device=device, region=region, name="coordinate_index")]
-        elements = ds.get_element_node_list(device=device, region=region, reorder=True)
+        node_to_coordinates = np.array(ds.get_node_model_values(device=device, region=region, name="coordinate_index")).astype(int)
+        elements = np.array(ds.get_element_node_list(device=device, region=region, reorder=True))
         region_info[region] = RegionInfo(node_to_coordinates=node_to_coordinates, elements=elements, transform_elements=True)
 
     return region_info
@@ -89,12 +86,12 @@ def get_boundary_info(device, region_info):
     boundary_info = {}
     for contact in contacts:
         region = ds.get_region_list(device=device, contact=contact)[0]
-        elements = ds.get_element_node_list(device=device, region=region, contact=contact, reorder=True)
+        elements = np.array(ds.get_element_node_list(device=device, region=region, contact=contact, reorder=True))
         boundary_info[contact] = BoundaryInfo(node_to_coordinates=region_info[region].node_to_coordinates, elements=elements, transform_elements=True)
 
     for interface in interfaces:
         region = ds.get_region_list(device=device, interface=interface)[0]
-        elements = ds.get_element_node_list(device=device, region=region, interface=interface,reorder=True)
+        elements = np.array(ds.get_element_node_list(device=device, region=region, interface=interface,reorder=True))
         boundary_info[interface] = BoundaryInfo(node_to_coordinates=region_info[region].node_to_coordinates, elements=elements, transform_elements=True)
     return boundary_info
 

@@ -1,3 +1,6 @@
+0.1.7
+fix issue where boundary info not properly converted using ``--old`` method
+
 0.1.6
 fix issue where datasets not loaded properly for devsim, tecplot
 
