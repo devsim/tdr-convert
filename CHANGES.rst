@@ -1,3 +1,6 @@
+0.1.5
+fix issue #5 where boundary conditions had wrong indexing in exodus output
+
 0.1.4
 fix issue where scalar nodal data was missing
 

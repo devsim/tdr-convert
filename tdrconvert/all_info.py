@@ -28,8 +28,13 @@ class RegionInfo:
             self.elements = elements[:] + 1
 
 class BoundaryInfo:
-    def __init__(self, elements):
-        self.elements = elements
+    def __init__(self, node_to_coordinates, elements, transform_elements):
+        self.node_to_coordinates = node_to_coordinates
+        if transform_elements:
+            self.elements = elements
+        else:
+            # 1 based indexing for gmsh, tetgen, exodus
+            self.elements = elements[:] + 1
 
 def transform_nodes_to_coordinates(node_to_coordinates, elements):
     out_elements = [None] * len(elements)
@@ -60,6 +65,9 @@ def get_physical_groups(device):
     return groups
 
 def get_region_info(device):
+    #
+    # using devsim
+    #
     region_info = {}
     max_coordinate = -1
     regions = ds.get_region_list(device=device)
@@ -72,6 +80,9 @@ def get_region_info(device):
     return region_info
 
 def get_boundary_info(device, region_info):
+    #
+    # using devsim
+    #
     contacts = ds.get_contact_list(device=device)
     interfaces = ds.get_interface_list(device=device)
 
@@ -79,15 +90,19 @@ def get_boundary_info(device, region_info):
     for contact in contacts:
         region = ds.get_region_list(device=device, contact=contact)[0]
         elements = ds.get_element_node_list(device=device, region=region, contact=contact, reorder=True)
-        boundary_info[contact] = BoundaryInfo(transform_nodes_to_coordinates(region_info[region].node_to_coordinates, elements))
+        boundary_info[contact] = BoundaryInfo(node_to_coordinates=region_info[region].node_to_coordinates, elements=elements, transform_elements=True)
 
     for interface in interfaces:
         region = ds.get_region_list(device=device, interface=interface)[0]
         elements = ds.get_element_node_list(device=device, region=region, interface=interface,reorder=True)
-        boundary_info[interface] = BoundaryInfo(transform_nodes_to_coordinates(region_info[region].node_to_coordinates, elements))
+        boundary_info[interface] = BoundaryInfo(node_to_coordinates=region_info[region].node_to_coordinates, elements=elements, transform_elements=True)
     return boundary_info
 
 def get_coordinates(device, region_info):
+    #
+    # using devsim
+    #
+    contacts = ds.get_contact_list(device=device)
     regions = ds.get_region_list(device=device)
 
     max_coordinate = -1
@@ -113,6 +128,10 @@ def get_coordinates(device, region_info):
 
 
 def get_device_info(device):
+    #
+    # using devsim
+    #
+    contacts = ds.get_contact_list(device=device)
     device_info = {}
     contact_info = {}
     region_info = {}
@@ -152,6 +171,10 @@ def get_device_info(device):
     return device_info
 
 def get_all_info(device):
+    #
+    # using devsim
+    #
+    contacts = ds.get_contact_list(device=device)
     groups = get_physical_groups(device=device)
     region_info = get_region_info(device=device)
     boundary_info = get_boundary_info(device=device, region_info=region_info)
@@ -231,15 +254,15 @@ def get_info_from_tdr_data(device, data):
     for r in data['regions']:
         if r['typename'] == 'region':
             e =r['elements']
-            region_info[r['name']] = RegionInfo(node_to_coordinates=e['coordinates'], elements=e[vname], transform_elements=False)
+            region_info[r['name']] = RegionInfo(node_to_coordinates=None, elements=e[vname], transform_elements=False)
 
     boundary_info = {}
 
     sname = read_tdr.get_shape_name(dim-1)
     for r in data['regions']:
         if r['typename'] in ('contact', 'interface'):
-            e =r['elements'][sname][:]
-            boundary_info[r['name']] = BoundaryInfo(e)
+            e =r['elements']
+            boundary_info[r['name']] = BoundaryInfo(node_to_coordinates=None, elements=e[sname], transform_elements=False)
 
     coordinates = data['coordinates']
     coordinates = coordinates.reshape(-1, 3)
