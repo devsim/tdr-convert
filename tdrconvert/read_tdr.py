@@ -526,7 +526,7 @@ def create_devsim_data(device_name, data, datasets):
         nrows = d['nrows']
 
         if nrows == 1:
-            create_node_solution(device=device_name, region=r, name=n, values=v)
+            create_node_solution(device=device_name, region=r, name=n, values=v[0,:])
         else:
             for i in range(nrows):
                 create_node_solution(device=device_name, region=r, name=f'{n}_{i}', values=v[i,:])

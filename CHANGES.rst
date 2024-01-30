@@ -1,3 +1,6 @@
+0.1.6
+fix issue where datasets not loaded properly for devsim, tecplot
+
 0.1.5
 fix issue #5 where boundary conditions had wrong indexing in exodus output
 
